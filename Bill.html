@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electricity Bill Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f0f4f8;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1e88e5;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s ease;
+    }
+    input:focus {
+      border-color: #1e88e5;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #1e88e5;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1565c0;
+    }
+    .reset-btn {
+      background-color: #e53935;
+    }
+    .reset-btn:hover {
+      background-color: #b71c1c;
+    }
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+    }
+    .modal-content h2 {
+      margin-top: 0;
+      color: #1e88e5;
+    }
+    .modal-content p {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .modal-content button {
+      background-color: #1e88e5;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .modal-content button:hover {
+      background-color: #1565c0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Electricity Bill Calculator</h1>
+    <form id="billForm">
+      <label for="billAmount">Total Bill Amount (₹):</label>
+      <input type="number" id="billAmount" placeholder="Enter total bill amount" required>
+      
+      <label for="meterPrev">Main Meter Previous Reading:</label>
+      <input type="number" id="meterPrev" placeholder="Enter previous reading" required>
+      
+      <label for="meterCurr">Main Meter Current Reading:</label>
+      <input type="number" id="meterCurr" placeholder="Enter current reading" required>
+      
+      <label for="room1Prev">Room 1 Previous Reading:</label>
+      <input type="number" id="room1Prev" placeholder="Enter previous reading" required>
+      
+      <label for="room1Curr">Room 1 Current Reading:</label>
+      <input type="number" id="room1Curr" placeholder="Enter current reading" required>
+      
+      <label for="room2Prev">Room 2 Previous Reading:</label>
+      <input type="number" id="room2Prev" placeholder="Enter previous reading" required>
+      
+      <label for="room2Curr">Room 2 Current Reading:</label>
+      <input type="number" id="room2Curr" placeholder="Enter current reading" required>
+      
+      <button type="button" onclick="calculateBill()">Calculate</button>
+      <button type="button" class="reset-btn" onclick="resetForm()">Reset</button>
+    </form>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal" id="resultModal">
+    <div class="modal-content">
+      <h2>Bill Results</h2>
+      <div id="results"></div>
+      <button onclick="downloadResult()">Download Result</button>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    let resultText = '';
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Load saved values into inputs
+      const savedMeterCurr = localStorage.getItem('meterCurr');
+      const savedRoom1Curr = localStorage.getItem('room1Curr');
+      const savedRoom2Curr = localStorage.getItem('room2Curr');
+
+      if (savedMeterCurr) document.getElementById('meterPrev').value = savedMeterCurr;
+      if (savedRoom1Curr) document.getElementById('room1Prev').value = savedRoom1Curr;
+      if (savedRoom2Curr) document.getElementById('room2Prev').value = savedRoom2Curr;
+    });
+
+    function calculateBill() {
+      const billAmount = parseFloat(document.getElementById('billAmount').value);
+      const meterPrev = parseFloat(document.getElementById('meterPrev').value);
+      const meterCurr = parseFloat(document.getElementById('meterCurr').value);
+      const room1Prev = parseFloat(document.getElementById('room1Prev').value);
+      const room1Curr = parseFloat(document.getElementById('room1Curr').value);
+      const room2Prev = parseFloat(document.getElementById('room2Prev').value);
+      const room2Curr = parseFloat(document.getElementById('room2Curr').value);
+
+      if (
+        meterCurr <= meterPrev ||
+        room1Curr <= room1Prev ||
+        room2Curr <= room2Prev ||
+        billAmount <= 0
+      ) {
+        alert('Invalid input values. Please check your readings and bill amount.');
+        return;
+      }
+
+      const subsidy = 58;
+      const subsidy_room = subsidy / 3;
+      const totalUsage = meterCurr - meterPrev;
+      const room1Usage = Math.max(0, (room1Curr - room1Prev) - subsidy_room);
+      const room2Usage = Math.max(0, (room2Curr - room2Prev) - subsidy_room);
+      const room3Usage = Math.max(
+        0,
+        (totalUsage - ((room1Curr - room1Prev) + (room2Curr - room2Prev))) -
+          subsidy_room
+      );
+
+      const unitCost = billAmount / (totalUsage - subsidy);
+
+      const room1Bill = (room1Usage > 0) ? room1Usage * unitCost : 0;
+      const room2Bill = (room2Usage > 0) ? room2Usage * unitCost : 0;
+      const room3Bill = (room3Usage > 0) ? room3Usage * unitCost : 0;
+
+      // Calculate remaining subsidy for each room
+      const room1SubsidyLeft = subsidy_room - room1Usage;
+      const room2SubsidyLeft = subsidy_room - room2Usage;
+      const room3SubsidyLeft = subsidy_room - room3Usage;
+
+      resultText = `
+        Room 1 Bill: ₹${room1Bill.toFixed(2)}\n
+        Room 2 Bill: ₹${room2Bill.toFixed(2)}\n
+        Room 3 Bill: ₹${room3Bill.toFixed(2)}\n
+        Room 1 Subsidy Left: ${room1SubsidyLeft.toFixed(2)} units\n
+        Room 2 Subsidy Left: ${room2SubsidyLeft.toFixed(2)} units\n
+        Room 3 Subsidy Left: ${room3SubsidyLeft.toFixed(2)} units
+      `;
+
+      document.getElementById('results').innerHTML = `
+        <div><strong>Room 1 Bill:</strong> ₹${room1Bill.toFixed(2)} (Subsidy Left: ${room1SubsidyLeft.toFixed(2)} units)</div>
+        <div><strong>Room 2 Bill:</strong> ₹${room2Bill.toFixed(2)} (Subsidy Left: ${room2SubsidyLeft.toFixed(2)} units)</div>
+        <div><strong>Room 3 Bill:</strong> ₹${room3Bill.toFixed(2)} (Subsidy Left: ${room3SubsidyLeft.toFixed(2)} units)</div>
+      `;
+      
+      document.getElementById('resultModal').style.display = 'flex';
+      
+      // Save current readings for next run
+      localStorage.setItem('meterCurr', meterCurr);
+      localStorage.setItem('room1Curr', room1Curr);
+      localStorage.setItem('room2Curr', room2Curr);
+    }
+
+    function resetForm() {
+      document.getElementById('billForm').reset();
+      localStorage.removeItem('meterCurr');
+      localStorage.removeItem('room1Curr');
+      localStorage.removeItem('room2Curr');
+      resultText = '';
+    }
+
+    function closeModal() {
+      document.getElementById('resultModal').style.display = 'none';
+    }
+
+    function downloadResult() {
+      const blob = new Blob([resultText], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'bill_result.txt';
+      link.click();
+    }
+  </script>
+</body>
+</html>
